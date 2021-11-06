@@ -1,5 +1,6 @@
 import json
 import datetime
+import time
 from flask import Flask,make_response,request
 import mysql.connector
 from math import ceil
@@ -9,6 +10,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask import jsonify
 # pymysql.install_as_MySQLdb()
 
+#生成app执行flask
 app = Flask(__name__)
 
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://xiaohao:123456@127.0.0.1/iems5722'
@@ -35,6 +37,7 @@ app = Flask(__name__)
 #     message = db.Column(db.String(200))
 #     message_time = db.Column(db.String(100))
 
+##连接数据库配置
 db = mysql.connector.connect(
     host="localhost",
     user="xiaohao",
@@ -48,6 +51,7 @@ cursor = db.cursor()
 def hello_world():  # put application's code here
     return 'Hello World!'
 
+##获取聊天室
 @app.route('/api/a3/get_chatrooms', methods=['GET'])
 def get_chatrooms():
     # rooms = Chatrooms.query.all()
@@ -68,6 +72,7 @@ def get_chatrooms():
     response.mimetype = 'application/json'
     return response
 
+##获取对应聊天室的内容
 @app.route('/api/a3/get_messages', methods=['GET'])
 def get_messages():
     # db1 = pymysql.connect(host='localhost',
@@ -75,11 +80,12 @@ def get_messages():
     #                       password='123456',
     #                       database='iems5722')
     # cursor = db1.cursor()
-    args1 = request.args.get("chatroom_id")
-    args2 = request.args.get("page")
-    print(args1)
-    print(args2)
-    if args1 is None or args2 is None:
+    chatroom_id = request.args.get("chatroom_id")
+    page = request.args.get("page")
+    print(chatroom_id)
+    print(page)
+    #如果参数存在错误返回错误信息提示
+    if chatroom_id is None or page is None:
         data = {
             "message": "<error message>",
             "status": "ERROR"
@@ -90,7 +96,7 @@ def get_messages():
 
     # lit = Messages.query.filter(Messages.chatroom_id == int(args1)).order_by(Messages.message_time.desc()).all()
     sql = 'SELECT messages.id AS messages_id, messages.chatroom_id AS messages_chatroom_id, messages.user_id AS messages_user_id, messages.name AS messages_name, messages.message AS messages_message, messages.message_time AS ' \
-          'messages_message_time FROM messages WHERE messages.chatroom_id = ' + str(args1) + " ORDER BY messages.message_time DESC"
+          'messages_message_time FROM messages WHERE messages.chatroom_id = ' + str(chatroom_id) + " ORDER BY messages.message_time DESC"
 
     # try:
     #     cursor.execute(sql)
@@ -103,16 +109,19 @@ def get_messages():
     cursor.execute(sql)
     results = cursor.fetchall()
     total_pages = ceil(len(results) / 5)
+    print(total_pages)
     messages = []
-    if total_pages >= int(args1):
-        length = int(args2) * 5
+    #确保请求的页面比总页面小
+    if total_pages >= int(page):
+        #假设每个page有5条信息
+        length = int(page) * 5
         if len(results) < length:
             length = len(results)
 
         if length - 5 < 0:
             start = 0
         else:
-            start = int(args1) * 5 - 5
+            start = int(page) * 5 - 5
 
         for i in range(start, length):
             message = results[i][4]
@@ -123,7 +132,7 @@ def get_messages():
             messages.append(jsonObj)
 
     data = {
-        "current_page": int(args2),
+        "current_page": int(page),
         "messages": messages,
         "total_pages": ceil(len(results) / 5)
     }
@@ -131,9 +140,35 @@ def get_messages():
     response.mimetype = 'application/json'
     return response
 
+##给对应聊天室发信息
 @app.route('/api/a3/send_message', methods=['POST'])
 def send_message():
-    return ''
+    try:
+        postParam = request.form
+        chatroom_id = postParam.get("chatroom_id")
+        user_id = postParam.get("user_id")
+        name = postParam.get("name")
+        message = postParam.get("message")
+        message_time = time.strftime("%Y-%m-%d %H:%M", time.localtime())
+        print(chatroom_id+user_id+name+message)
+        sql = "INSERT INTO messages (chatroom_id,user_id,name,message,message_time) VALUES (%s, %s, %s, %s, %s)"
+        val = (chatroom_id, user_id, name, message, message_time)
+        cursor.execute(sql, val)
+        db.commit()
+        print("insert successfully", cursor.lastrowid)
+    except:
+        data = {
+            "message": "<error message>",
+            "status": "ERROR"
+        }
+        response = make_response(json.dumps(data, ensure_ascii=False))
+        response.mimetype = 'application/json'
+        return response
+
+    data = {"status": "OK"}
+    response = make_response(json.dumps(data, ensure_ascii=False))
+    response.mimetype = 'application/json'
+    return response
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port='5000',debug=True)
