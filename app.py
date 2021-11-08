@@ -63,11 +63,11 @@ def get_chatrooms():
         for row in rooms:
             id = row[0]
             name = row[1]
-            jsonObj = {"id" : id, "name": name}
+            jsonObj = {"id": id, "name": name}
             carry.append(jsonObj)
 
 
-    data = {'data':str(carry),'status':'OK'}
+    data = {'data':carry,'status':'OK'}
     response = make_response(json.dumps(data, ensure_ascii=False))
     response.mimetype = 'application/json'
     return response
@@ -136,7 +136,8 @@ def get_messages():
         "messages": messages,
         "total_pages": ceil(len(results) / 5)
     }
-    response = make_response(json.dumps(data, ensure_ascii=False))
+    data1 = {"data": data, "status": "OK"}
+    response = make_response(json.dumps(data1, ensure_ascii=False))
     response.mimetype = 'application/json'
     return response
 
