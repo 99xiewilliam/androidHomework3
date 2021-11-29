@@ -4,6 +4,7 @@ import time
 from flask import Flask,make_response,request
 import mysql.connector
 from math import ceil
+from task import send_notification
 
 from flask_sqlalchemy import SQLAlchemy
 # import pymysql
@@ -157,6 +158,21 @@ def send_message():
         cursor.execute(sql, val)
         db.commit()
         print("insert successfully", cursor.lastrowid)
+
+        sql = "select * from push_tokens"
+        cursor.execute(sql)
+        user_tokens = cursor.fetchall()
+        carry = []
+        if len(user_tokens) != 0:
+            for row in user_tokens:
+                user_num = row[0]
+                tokens = row[1]
+                jsonObj = {"user_id": user_num, "tokens": tokens}
+                carry.append(jsonObj)
+
+        send_notification.delay(carry, user_id, message)
+
+
     except:
         data = {
             "message": "<error message>",
