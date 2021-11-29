@@ -171,5 +171,32 @@ def send_message():
     response.mimetype = 'application/json'
     return response
 
+@app.route('/api/a4/submit_push_token', methods=['POST'])
+def get_token():
+    try:
+        postParam = request.form
+        user_id = postParam.get("user_id")
+        token = postParam.get("token")
+        sql = "INSERT INTO push_tokens (user_id, token) VALUES (%s, %s)"
+        val = (user_id, token)
+        cursor.execute(sql, val)
+        db.commit()
+        print("insert successfully", cursor.lastrowid)
+    except:
+        data = {
+            "message": "<error message>",
+            "status": "ERROR"
+        }
+        response = make_response(json.dumps(data, ensure_ascii=False))
+        response.mimetype = 'application/json'
+        return response
+
+    data = {"status": "OK"}
+    response = make_response(json.dumps(data, ensure_ascii=False))
+    response.mimetype = 'application/json'
+    return response
+
+
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',port='5000',debug=True)
+    app.run(host='0.0.0.0', port='5000', debug=True)
