@@ -2,6 +2,7 @@ import json
 import datetime
 import time
 from flask import Flask,make_response,request
+from firebase_admin import messaging
 import mysql.connector
 from math import ceil
 from task import send_notification
@@ -165,12 +166,25 @@ def send_message():
         carry = []
         if len(user_tokens) != 0:
             for row in user_tokens:
-                user_num = row[0]
                 tokens = row[1]
-                jsonObj = {"user_id": user_num, "tokens": tokens}
-                carry.append(jsonObj)
+                carry.append(tokens)
 
         send_notification.delay(carry, user_id, message)
+        # message = messaging.MulticastMessage(
+        #     android=messaging.AndroidConfig(
+        #         ttl=datetime.timedelta(seconds=3600),
+        #         priority='normal',
+        #         notification=messaging.AndroidNotification(
+        #             title=user_id,
+        #             body=message,
+        #             color='#f45342'
+        #         ),
+        #     ),
+        #     topic='industry-tech',
+        #     tokens=carry,
+        # )
+        response = messaging.send_multicast(message)
+        print('{0} messages were sent successfully'.format(response.success_count))
 
 
     except:

@@ -18,7 +18,7 @@ def send_notification(list_token, id, meg):
                 color='#f45342'
             ),
         ),
-        topic='industry-tech',
+        tokens=registration_tokens,
     )
     response = messaging.send_multicast(message)
     print('{0} messages were sent successfully'.format(response.success_count))
