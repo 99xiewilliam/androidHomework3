@@ -40,14 +40,14 @@ app = Flask(__name__)
 #     message_time = db.Column(db.String(100))
 
 ##连接数据库配置
-db = mysql.connector.connect(
-    host="localhost",
-    user="xiaohao",
-    passwd="123456",
-    database="iems5722"
-)
+#db = mysql.connector.connect(
+#    host="localhost",
+#    user="xiaohao",
+#    passwd="123456",
+#    database="iems5722"
+#)
 
-cursor = db.cursor()
+#cursor = db.cursor()
 
 @app.route('/hello')
 def hello_world():  # put application's code here
@@ -57,6 +57,13 @@ def hello_world():  # put application's code here
 @app.route('/api/a3/get_chatrooms', methods=['GET'])
 def get_chatrooms():
     # rooms = Chatrooms.query.all()
+    db = mysql.connector.connect(
+        host="localhost",
+        user="xiaohao",
+        passwd="123456",
+        database="iems5722"
+    )
+    cursor = db.cursor()
     sql = "select * from chatrooms"
     cursor.execute(sql)
     rooms = cursor.fetchall()
@@ -72,6 +79,8 @@ def get_chatrooms():
     data = {'data':carry,'status':'OK'}
     response = make_response(json.dumps(data, ensure_ascii=False))
     response.mimetype = 'application/json'
+    cursor.close()
+    db.close();
     return response
 
 ##获取对应聊天室的内容
@@ -82,6 +91,13 @@ def get_messages():
     #                       password='123456',
     #                       database='iems5722')
     # cursor = db1.cursor()
+    db = mysql.connector.connect(
+        host="localhost",
+        user="xiaohao",
+        passwd="123456",
+        database="iems5722"
+    )
+    cursor = db.cursor()
     chatroom_id = request.args.get("chatroom_id")
     page = request.args.get("page")
     print(chatroom_id)
@@ -94,6 +110,8 @@ def get_messages():
         }
         response = make_response(json.dumps(data, ensure_ascii=False))
         response.mimetype = 'application/json'
+        cursor.close()
+        db.close()
         return response
 
     # lit = Messages.query.filter(Messages.chatroom_id == int(args1)).order_by(Messages.message_time.desc()).all()
@@ -141,12 +159,21 @@ def get_messages():
     data1 = {"data": data, "status": "OK"}
     response = make_response(json.dumps(data1, ensure_ascii=False))
     response.mimetype = 'application/json'
+    cursor.close()
+    db.close()
     return response
 
 ##给对应聊天室发信息
 @app.route('/api/a3/send_message', methods=['POST'])
 def send_message():
     try:
+        db = mysql.connector.connect(
+            host="localhost",
+            user="xiaohao",
+            passwd="123456",
+            database="iems5722"
+        )
+        cursor = db.cursor()
         postParam = request.form
         chatroom_id = postParam.get("chatroom_id")
         user_id = postParam.get("user_id")
@@ -162,29 +189,21 @@ def send_message():
 
         sql = "select * from push_tokens"
         cursor.execute(sql)
+        #db.commit()
         user_tokens = cursor.fetchall()
+        print('99999999999999999999999999')
+        print(user_tokens)
+        print('88888888888888888888888888')
         carry = []
         if len(user_tokens) != 0:
             for row in user_tokens:
-                tokens = row[1]
-                carry.append(tokens)
+                tokens = row[2]
+                carry.append(str(tokens))
+
+        cursor.close()
+        db.close()
 
         send_notification.delay(carry, user_id, message)
-        # message = messaging.MulticastMessage(
-        #     android=messaging.AndroidConfig(
-        #         ttl=datetime.timedelta(seconds=3600),
-        #         priority='normal',
-        #         notification=messaging.AndroidNotification(
-        #             title=user_id,
-        #             body=message,
-        #             color='#f45342'
-        #         ),
-        #     ),
-        #     topic='industry-tech',
-        #     tokens=carry,
-        # )
-        response = messaging.send_multicast(message)
-        print('{0} messages were sent successfully'.format(response.success_count))
 
 
     except:
@@ -204,6 +223,13 @@ def send_message():
 @app.route('/api/a4/submit_push_token', methods=['POST'])
 def get_token():
     try:
+        db = mysql.connector.connect(
+            host="localhost",
+            user="xiaohao",
+            passwd="123456",
+            database="iems5722"
+        )
+        cursor = db.cursor()
         postParam = request.form
         user_id = postParam.get("user_id")
         token = postParam.get("token")
@@ -212,6 +238,8 @@ def get_token():
         cursor.execute(sql, val)
         db.commit()
         print("insert successfully", cursor.lastrowid)
+        cursor.close()
+        db.close()
     except:
         data = {
             "message": "<error message>",
