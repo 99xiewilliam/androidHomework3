@@ -200,10 +200,20 @@ def send_message():
                 tokens = row[2]
                 carry.append(str(tokens))
 
+        sql = "select chatrooms.name from chatrooms where chatrooms.id = " + str(chatroom_id)
+        cursor.execute(sql)
+        result_names = cursor.fetchall()
+
+        chatroom_name = ''
+        if len(result_names) != 0:
+            for row in result_names:
+                chatroom_name = row[0]
+
+
         cursor.close()
         db.close()
 
-        send_notification.delay(carry, user_id, message)
+        send_notification.delay(carry, chatroom_name, message)
 
 
     except:
