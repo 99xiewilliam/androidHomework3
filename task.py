@@ -8,22 +8,25 @@ cred = credentials.Certificate("android-f8ca4-firebase-adminsdk-cc61u-29ef632831
 #app_options = {'projectId':'project-352564192482'}
 firebase_admin.initialize_app(cred)
 @celery.task
-def send_notification(list_token, id, meg):
+def send_notification(list_token, id, chatroom_name, meg):
     registration_tokens = list_token
     print(registration_tokens)
     print('=====123======')
+    print(id)
+    print(chatroom_name)
 
     message = messaging.MulticastMessage(
-        android=messaging.AndroidConfig(
-            ttl=datetime.timedelta(seconds=3600),
-            priority='normal',
-            notification=messaging.AndroidNotification(
-                title=id,
-                body=meg,
-                icon='stock_ticker_update',
-                color='#f45342'
-            ),
-        ),
+        #android=messaging.AndroidConfig(
+        #    ttl=datetime.timedelta(seconds=3600),
+        #    priority='normal',
+            #notification=messaging.AndroidNotification(
+            #    title=chatroom_name,
+            #    body=meg,
+            #    icon='stock_ticker_update',
+            #    color='#f45342'
+            #),
+        #),
+        data={'id':str(id),'chatroom_name':chatroom_name, 'meg':meg},
         tokens=registration_tokens,
     )
     print('testtttttttttttttttttttttttttt')
